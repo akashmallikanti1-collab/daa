@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waiting for Match – RideShareVCE</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+body{background:#0f172a;min-height:100vh;display:flex;flex-direction:column}
+.wait-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+.wait-card{background:#1e293b;border-radius:24px;padding:48px 40px;max-width:540px;width:100%;text-align:center;color:#e2e8f0}
+.pulse-ring{width:100px;height:100px;border-radius:50%;border:4px solid #2563EB;margin:0 auto 24px;position:relative;animation:pulse 1.6s ease-in-out infinite}
+.pulse-ring::after{content:'🛵';font-size:40px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.5)}50%{box-shadow:0 0 0 20px rgba(37,99,235,0)}}
+h1{font-family:Syne,sans-serif;font-size:1.8rem;margin:0 0 8px;color:#fff}
+.sub{color:#94a3b8;margin-bottom:32px;font-size:.95rem}
+.ride-info{background:#0f172a;border-radius:14px;padding:20px;text-align:left;margin-bottom:28px}
+.ride-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e293b;font-size:.9rem}
+.ride-row:last-child{border:none}
+.ride-row .lbl{color:#64748b}
+.ride-row .val{color:#e2e8f0;font-weight:600}
+.algo-mini{background:#0f172a;border-radius:14px;padding:20px;margin-bottom:28px;text-align:left}
+.algo-mini h3{font-size:.85rem;color:#60a5fa;margin:0 0 12px;text-transform:uppercase;letter-spacing:.05em}
+.path-nodes{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pnode{padding:5px 12px;border-radius:6px;background:#1e293b;color:#93c5fd;font-size:.8rem;font-weight:600}
+.parrow{color:#475569}
+.dist-badge{margin-top:10px;font-size:.82rem;color:#34d399}
+.status-bar{display:flex;align-items:center;gap:10px;justify-content:center;color:#60a5fa;font-size:.85rem}
+.dot{width:8px;height:8px;border-radius:50%;background:#2563EB;animation:blink 1s ease infinite}
+.dot:nth-child(2){animation-delay:.2s}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+.matched-banner{display:none;background:#166534;border-radius:12px;padding:16px;margin-bottom:20px;color:#bbf7d0;font-weight:600;font-size:1rem}
+</style>
+</head>
+<body>
+<nav class="app-nav" style="background:#1e293b;border-bottom:1px solid #0f172a">
+  <a href="{{ url_for('dashboard') }}" class="nav-brand">
+    <span class="brand-icon">🛵</span>
+    <span class="brand-name" style="color:#fff">RideShare<span class="brand-vce">VCE</span></span>
+  </a>
+  <div class="nav-user">
+    <div class="user-avatar">{{ user.name[0].upper() }}</div>
+    <span class="user-name" style="color:#e2e8f0">{{ user.name }}</span>
+    <a href="{{ url_for('profile') }}" class="btn btn-ghost btn-sm" style="color:#94a3b8">👤 Profile</a>
+    <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm" style="color:#94a3b8">Logout</a>
+  </div>
+</nav>
+
+<div class="wait-wrap">
+  <div class="wait-card">
+    <div class="pulse-ring"></div>
+    <h1>Looking for a Match…</h1>
+    <p class="sub">Your ride is live. Waiting for someone with an overlapping route.</p>
+
+    <div class="matched-banner" id="matchedBanner">🎉 Match Found! Redirecting you now…</div>
+
+    <!-- Ride details -->
+    <div class="ride-info">
+      <div class="ride-row"><span class="lbl">Type</span><span class="val">{% if ride.type=='give'%}🚘 Giving a Ride{% else %}🙋 Requesting{% endif %}</span></div>
+      <div class="ride-row"><span class="lbl">Vehicle</span><span class="val">{% if ride.vehicle=='bike'%}🛵{% else %}🚗{% endif %} {{ ride.vehicle|capitalize }}</span></div>
+      <div class="ride-row"><span class="lbl">From</span><span class="val">📍 {{ ride.pickup }}</span></div>
+      <div class="ride-row"><span class="lbl">To</span><span class="val">🏁 {{ ride.dropoff }}</span></div>
+      <div class="ride-row"><span class="lbl">Ride ID</span><span class="val">#{{ ride.id }}</span></div>
+    </div>
+
+    <!-- Dijkstra result for YOUR route -->
+    {% if algo_trace and algo_trace.new_ride %}
+    <div class="algo-mini">
+      <h3>⚡ Dijkstra Shortest Path – Your Route</h3>
+      <div class="path-nodes">
+        {% for node in algo_trace.new_ride.shortest_path %}
+          {% if not loop.first %}<span class="parrow">→</span>{% endif %}
+          <span class="pnode">{{ node.replace(' (Ibrahimbagh)','') }}</span>
+        {% endfor %}
+      </div>
+      <div class="dist-badge">📏 {{ algo_trace.new_ride.distance_km }} km · {{ (algo_trace.new_ride.dijkstra_steps or [])|length }} Dijkstra steps</div>
+    </div>
+    {% endif %}
+
+    <div class="status-bar">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <span id="statusText">Scanning for matching rides…</span>
+    </div>
+
+    <div style="margin-top:24px">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline" style="border-color:#334155;color:#94a3b8">← Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const RIDE_ID = "{{ ride.id }}";
+let pollCount = 0;
+
+async function pollMatch() {
+  try {
+    const res  = await fetch(`/api/check_match/${RIDE_ID}`);
+    const data = await res.json();
+    pollCount++;
+    document.getElementById('statusText').textContent =
+      `Scanning for matching rides… (check #${pollCount})`;
+
+    if (data.status === 'matched') {
+      document.getElementById('matchedBanner').style.display = 'block';
+      document.getElementById('statusText').textContent = 'Match found!';
+      // Redirect to the shared result page
+      setTimeout(() => { window.location.href = `/result/${RIDE_ID}`; }, 1200);
+      return; // stop polling
+    }
+  } catch(e) { /* network hiccup, keep polling */ }
+  setTimeout(pollMatch, 3000); // poll every 3 seconds
+}
+
+pollMatch();
+</script>
+</body>
+</html>

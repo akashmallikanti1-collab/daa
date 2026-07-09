@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Match Result – RideShareVCE</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+/* ── Algo Section ── */
+.algo-wrap{background:#0f172a;border-radius:24px;padding:32px;margin-top:32px;color:#e2e8f0}
+.algo-wrap h2{font-family:Syne,sans-serif;color:#60a5fa;margin:0 0 4px;font-size:1.3rem}
+.algo-wrap .sub{color:#64748b;font-size:.82rem;margin-bottom:24px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+.tab{padding:9px 20px;border-radius:10px;border:1.5px solid #1e293b;background:transparent;color:#64748b;cursor:pointer;font-family:inherit;font-size:.85rem;font-weight:600;transition:.2s}
+.tab.on{background:#2563EB;border-color:#2563EB;color:#fff}
+.panel{display:none}.panel.on{display:block}
+
+/* ── Canvas panels ── */
+canvas{display:block;border-radius:14px;background:#111827;width:100%}
+.ctrl{display:flex;align-items:center;gap:10px;margin:14px 0;flex-wrap:wrap}
+.cbtn{padding:8px 20px;border-radius:8px;border:1.5px solid #334155;background:#1e293b;color:#e2e8f0;cursor:pointer;font-family:inherit;font-size:.85rem;font-weight:600;transition:.2s}
+.cbtn:hover,.cbtn.active{background:#2563EB;border-color:#2563EB;color:#fff}
+.cinfo{color:#475569;font-size:.82rem}
+
+/* ── Dijkstra table ── */
+#dijkInfo{background:#111827;border-radius:10px;padding:14px;margin-top:12px;font-size:.8rem;min-height:60px;color:#94a3b8}
+.drow{display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid #1e293b}
+.drow:last-child{border:none}
+.dname{flex:1;color:#e2e8f0}
+.ddist{width:70px;text-align:right;font-weight:700;color:#60a5fa}
+.dstat{width:90px;text-align:right;font-size:.75rem}
+.dstat.settled{color:#34d399}.dstat.visiting{color:#fbbf24}.dstat.pending{color:#475569}
+
+/* ── BFS ── */
+.bfs-queue{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;min-height:36px;align-items:center}
+.bnode{padding:5px 12px;border-radius:6px;font-size:.8rem;font-weight:700;border:2px solid transparent;transition:.3s}
+.bnode.queued{background:#1e293b;color:#93c5fd;border-color:#334155}
+.bnode.visiting{background:#2563EB;color:#fff;border-color:#60a5fa}
+.bnode.done{background:#166534;color:#bbf7d0;border-color:#16a34a}
+.bnode.rejected{background:#3b1919;color:#fca5a5;border-color:#dc2626}
+.bfs-log-box{background:#111827;border-radius:10px;padding:14px;font-size:.8rem;max-height:180px;overflow-y:auto;color:#94a3b8;margin-top:10px}
+.bfs-entry{padding:5px 0;border-bottom:1px solid #1e293b;display:flex;gap:8px}
+.bfs-entry:last-child{border:none}
+.bfs-icon{width:20px;flex-shrink:0}
+
+/* ── Overlap bar ── */
+.overlap-wrap{margin:16px 0}
+.overlap-label{font-size:.85rem;color:#94a3b8;margin-bottom:6px;display:flex;justify-content:space-between}
+.overlap-track{height:18px;background:#1e293b;border-radius:9px;overflow:hidden}
+.overlap-fill{height:100%;width:0;background:linear-gradient(90deg,#2563EB,#34d399);border-radius:9px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.overlap-pct{font-size:1.3rem;font-weight:800;color:#34d399;text-align:center;margin-top:6px}
+
+/* ── Summary table ── */
+.stbl{width:100%;border-collapse:collapse;font-size:.82rem}
+.stbl th{background:#1e293b;color:#60a5fa;padding:9px 12px;text-align:left}
+.stbl td{padding:8px 12px;border-bottom:1px solid #1e293b;color:#cbd5e1}
+.stbl tr:last-child td{border:none}
+.stbl .hi{background:#1d3461!important}
+.complexity-box{margin-top:16px;background:#1e293b;border-radius:10px;padding:16px;font-size:.82rem;color:#94a3b8;line-height:2}
+
+/* ── result card overrides ── */
+.result-card{background:#fff;border-radius:24px;padding:36px 32px;margin-bottom:0;box-shadow:0 4px 32px #0001}
+@media(max-width:600px){.result-card{padding:24px 16px}}
+</style>
+</head>
+<body class="app-page">
+
+<nav class="app-nav">
+  <a href="{{ url_for('dashboard') }}" class="nav-brand">
+    <span class="brand-icon">🛵</span>
+    <span class="brand-name">RideShare<span class="brand-vce">VCE</span></span>
+  </a>
+  <div class="nav-user">
+    <div class="user-avatar">{{ user.name[0].upper() }}</div>
+    <span class="user-name">{{ user.name }}</span>
+    <a href="{{ url_for('profile') }}" class="btn btn-ghost btn-sm">👤 Profile</a>
+    <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</nav>
+
+<div class="app-container result-container">
+
+{% if success and match %}
+<!-- ══════════ SUCCESS ══════════ -->
+<div class="result-card success-card">
+  <div class="result-icon success-icon">🎉</div>
+  <h1 class="result-title">Ride Matched!</h1>
+  <p class="result-sub">Both riders can see this page. Share the Ride ID with your partner!</p>
+
+  <div class="match-cards-row">
+    <div class="person-card yours">
+      <div class="person-label">You</div>
+      <div class="person-avatar">{{ user.name[0].upper() }}</div>
+      <div class="person-name">{{ user.name }}</div>
+      <div class="person-detail">📧 {{ user.email }}</div>
+      <div class="person-detail">📱 {{ user.phone }}</div>
+      <div class="person-detail">
+        {% if ride.vehicle=='bike'%}🛵{% else %}🚗{% endif %}
+        {{ ride.vehicle|capitalize }} ·
+        {% if ride.type=='give'%}Giving Ride{% else %}Requesting Ride{% endif %}
+      </div>
+    </div>
+    <div class="match-connector">
+      <div class="connector-line"></div>
+      <div class="connector-icon">🤝</div>
+      <div class="connector-line"></div>
+    </div>
+    <div class="person-card matched">
+      <div class="person-label">Your Match</div>
+      <div class="person-avatar matched-av">{{ match.user_name[0].upper() }}</div>
+      <div class="person-name">{{ match.user_name }}</div>
+      <div class="person-detail">📧 {{ match.user_email }}</div>
+      <div class="person-detail">📱 {{ match.user_phone }}</div>
+      <div class="person-detail">
+        {% if match.vehicle=='bike'%}🛵{% else %}🚗{% endif %}
+        {{ match.vehicle|capitalize }} ·
+        {% if match.type=='give'%}Giving Ride{% else %}Requesting Ride{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="route-summary">
+    <div class="route-box">
+      <div class="route-box-title">Your Route</div>
+      <div class="route-row">
+        <span class="route-point-badge green">📍 {{ ride.pickup }}</span>
+        <span class="arrow-sm">→</span>
+        <span class="route-point-badge red">🏁 {{ ride.dropoff }}</span>
+      </div>
+    </div>
+    <div class="route-box">
+      <div class="route-box-title">Match's Route</div>
+      <div class="route-row">
+        <span class="route-point-badge green">📍 {{ match.pickup }}</span>
+        <span class="arrow-sm">→</span>
+        <span class="route-point-badge red">🏁 {{ match.dropoff }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="result-map-wrap">
+    <div id="resultMap" style="height:300px;border-radius:14px;overflow:hidden;"></div>
+  </div>
+  <div class="result-actions">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Dashboard</a>
+    <a href="{{ url_for('ride') }}" class="btn btn-outline">New Ride</a>
+  </div>
+</div>
+
+{% else %}
+<!-- ══════════ NO MATCH ══════════ -->
+<div class="result-card nomatch-card">
+  <div class="result-icon nomatch-icon">😔</div>
+  <h1 class="result-title">No Match Found Yet</h1>
+  <p class="result-sub">Your ride is saved. The algorithm ran — see the trace below!</p>
+  <div class="result-actions">
+    <a href="{{ url_for('ride') }}" class="btn btn-primary">Try Again</a>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline">Dashboard</a>
+  </div>
+</div>
+{% endif %}
+
+<!-- ══════════════════════════════════════════════════
+     ALGORITHM VISUALIZER
+══════════════════════════════════════════════════ -->
+<div class="algo-wrap">
+  <h2>🧠 Algorithm Visualizer</h2>
+  <p class="sub">Live animation of Dijkstra's algorithm and BFS sub-path matching used to find your ride.</p>
+
+  <div class="tabs">
+    <button class="tab on" onclick="showTab('graph')">🗺️ Graph + Routes</button>
+    <button class="tab"    onclick="showTab('dijkstra')">⚡ Dijkstra Steps</button>
+    <button class="tab"    onclick="showTab('bfs')">🔍 BFS Sub-path</button>
+    <button class="tab"    onclick="showTab('summary')">📋 Summary</button>
+  </div>
+
+  <!-- ── Tab 1: Graph Canvas ── -->
+  <div class="panel on" id="panel-graph">
+    <canvas id="graphCanvas" height="400"></canvas>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;font-size:.8rem;color:#64748b">
+      <span>🔵 Your Dijkstra path</span>
+      <span>🟠 Match's Dijkstra path</span>
+      <span>🟢 Overlapping segment</span>
+      <span>⚫ Other nodes</span>
+      <span style="color:#94a3b8">Edge labels = road distance km</span>
+    </div>
+  </div>
+
+  <!-- ── Tab 2: Dijkstra Animation ── -->
+  <div class="panel" id="panel-dijkstra">
+    <div style="color:#60a5fa;font-weight:700;margin-bottom:4px">
+      ⚡ Dijkstra's Algorithm — <span id="dijkRouteLabel"></span>
+    </div>
+    <div style="font-size:.8rem;color:#475569;margin-bottom:12px">
+      Uses a <strong style="color:#93c5fd">min-heap priority queue</strong>. Each step picks the unvisited node with lowest known distance, relaxes its neighbours, and marks it settled. Runs until the target is settled.
+    </div>
+
+    <!-- Animated graph for Dijkstra -->
+    <canvas id="dijkCanvas" height="320"></canvas>
+
+    <div class="ctrl">
+      <button class="cbtn" id="btnPlay" onclick="dijkPlay()">▶ Play</button>
+      <button class="cbtn" onclick="dijkStep(-1)">◀ Prev</button>
+      <button class="cbtn" onclick="dijkStep(1)">Next ▶</button>
+      <button class="cbtn" onclick="dijkReset()">↺ Reset</button>
+      <span class="cinfo" id="dijkCounter">Step 0 / 0</span>
+    </div>
+
+    <!-- Distance table -->
+    <div id="dijkInfo"></div>
+
+    <!-- Current step explanation -->
+    <div id="dijkExplain" style="margin-top:10px;padding:10px 14px;background:#1e293b;border-radius:8px;font-size:.82rem;color:#fbbf24;min-height:36px"></div>
+  </div>
+
+  <!-- ── Tab 3: BFS Animation ── -->
+  <div class="panel" id="panel-bfs">
+    <div style="color:#60a5fa;font-weight:700;margin-bottom:4px">🔍 BFS Sub-path Check</div>
+    <div style="font-size:.8rem;color:#475569;margin-bottom:12px">
+      Checks whether the <strong style="color:#fbbf24">requester's route</strong> is fully contained inside the <strong style="color:#60a5fa">giver's route</strong>. BFS explores the giver's path segment from the requester's pickup, expanding neighbours level by level until it reaches the requester's dropoff.
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:.82rem">
+      <span style="background:#1d3461;color:#60a5fa;padding:4px 10px;border-radius:6px">Giver path segment</span>
+      <span style="background:#2d1b00;color:#fbbf24;padding:4px 10px;border-radius:6px">Requester path</span>
+    </div>
+
+    <!-- BFS canvas -->
+    <canvas id="bfsCanvas" height="260"></canvas>
+
+    <div class="ctrl">
+      <button class="cbtn" id="btnBfsPlay" onclick="bfsPlay()">▶ Play BFS</button>
+      <button class="cbtn" onclick="bfsStep(-1)">◀ Prev</button>
+      <button class="cbtn" onclick="bfsStep(1)">Next ▶</button>
+      <button class="cbtn" onclick="bfsReset()">↺ Reset</button>
+      <span class="cinfo" id="bfsCounter">Step 0 / 0</span>
+    </div>
+
+    <div style="margin-top:10px">
+      <div style="font-size:.82rem;color:#94a3b8;margin-bottom:6px">BFS Queue (frontier):</div>
+      <div class="bfs-queue" id="bfsQueue"></div>
+    </div>
+
+    <div class="overlap-wrap">
+      <div class="overlap-label">
+        <span>Route Overlap Score</span>
+        <span id="overlapLabel">0%</span>
+      </div>
+      <div class="overlap-track"><div class="overlap-fill" id="overlapFill"></div></div>
+    </div>
+
+    <div class="bfs-log-box" id="bfsLogBox"></div>
+  </div>
+
+  <!-- ── Tab 4: Summary ── -->
+  <div class="panel" id="panel-summary">
+    <div id="summaryContent"></div>
+  </div>
+</div>
+
+</div><!-- /app-container -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ══════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════
+const COORDS = {
+  "Vasavi College (Ibrahimbagh)": [17.3850,78.4011],
+  "Golconda Fort":                [17.3833,78.4011],
+  "Nanalnagar":                   [17.3885,78.4180],
+  "Langar Houz":                  [17.3760,78.4260],
+  "Aramghar":                     [17.3700,78.4350],
+  "Attapur":                      [17.3631,78.4219],
+  "Tolichowki":                   [17.4048,78.4196],
+  "Mehdipatnam":                  [17.3927,78.4357],
+  "Karwan":                       [17.3978,78.4497],
+  "Rajendranagar":                [17.3322,78.4126]
+};
+
+const EDGES = [
+  ["Vasavi College (Ibrahimbagh)","Golconda Fort",0.6],
+  ["Vasavi College (Ibrahimbagh)","Nanalnagar",1.8],
+  ["Vasavi College (Ibrahimbagh)","Tolichowki",2.5],
+  ["Vasavi College (Ibrahimbagh)","Attapur",3.2],
+  ["Golconda Fort","Nanalnagar",1.5],
+  ["Golconda Fort","Langar Houz",3.0],
+  ["Golconda Fort","Attapur",3.8],
+  ["Nanalnagar","Langar Houz",1.2],
+  ["Nanalnagar","Mehdipatnam",1.9],
+  ["Nanalnagar","Tolichowki",2.1],
+  ["Langar Houz","Aramghar",1.1],
+  ["Langar Houz","Attapur",1.4],
+  ["Langar Houz","Mehdipatnam",1.5],
+  ["Aramghar","Attapur",1.3],
+  ["Aramghar","Rajendranagar",4.2],
+  ["Attapur","Rajendranagar",3.5],
+  ["Tolichowki","Mehdipatnam",1.4],
+  ["Tolichowki","Karwan",2.3],
+  ["Mehdipatnam","Karwan",1.8],
+  ["Karwan","Rajendranagar",5.5],
+];
+
+// Node layout positions (normalised 0-1)
+const NPOS = {
+  "Vasavi College (Ibrahimbagh)": [0.08,0.35],
+  "Golconda Fort":                [0.08,0.55],
+  "Nanalnagar":                   [0.32,0.22],
+  "Langar Houz":                  [0.50,0.52],
+  "Aramghar":                     [0.58,0.68],
+  "Attapur":                      [0.38,0.70],
+  "Tolichowki":                   [0.52,0.12],
+  "Mehdipatnam":                  [0.68,0.35],
+  "Karwan":                       [0.84,0.22],
+  "Rajendranagar":                [0.64,0.85],
+};
+
+const T = {{ algo_trace | tojson }};
+const hasMatch = {{ 'true' if success and match else 'false' }};
+const myPickup    = "{{ ride.pickup }}";
+const myDropoff   = "{{ ride.dropoff }}";
+const mxPickup    = "{{ match.pickup if match else '' }}";
+const mxDropoff   = "{{ match.dropoff if match else '' }}";
+const myPath      = (T.new_ride||{}).shortest_path || [];
+const mxPath      = ((T.winner||{}).shortest_path) || [];
+const dijkSteps   = (T.new_ride||{}).dijkstra_steps || [];
+const bfsLog      = ((T.winner||{}).bfs_log) || [];
+const winnerOverlap = (T.winner||{}).overlap || 0;
+
+// short name helper
+function sn(n){ return n.replace(' (Ibrahimbagh)',''); }
+
+// ══════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════
+function showTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const names=['graph','dijkstra','bfs','summary'];
+    t.classList.toggle('on', names[i]===name);
+  });
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('panel-'+name).classList.add('on');
+  if(name==='graph')    drawGraph();
+  if(name==='dijkstra'){drawDijkCanvas(dijkIdx); renderDijkTable(dijkIdx);}
+  if(name==='bfs')      {drawBfsCanvas(bfsIdx); renderBfsQueue(bfsIdx); if(bfsIdx===0) animateOverlap();}
+  if(name==='summary')  renderSummary();
+}
+
+// ══════════════════════════════════════════════════
+// LEAFLET MAP
+// ══════════════════════════════════════════════════
+{% if success and match %}
+const rmap = L.map('resultMap').setView([17.38,78.42],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(rmap);
+if(myPath.length>1){
+  L.polyline(myPath.filter(n=>COORDS[n]).map(n=>COORDS[n]),{color:'#2563EB',weight:5}).addTo(rmap);
+}
+if(mxPath.length>1){
+  L.polyline(mxPath.filter(n=>COORDS[n]).map(n=>COORDS[n]),{color:'#F59E0B',weight:4,dashArray:'7,5'}).addTo(rmap);
+}
+[myPickup,myDropoff].forEach((n,i)=>{
+  if(!COORDS[n]) return;
+  L.circleMarker(COORDS[n],{radius:11,fillColor:i?'#DC2626':'#16A34A',color:'#fff',weight:2,fillOpacity:1}).addTo(rmap)
+   .bindPopup((i?'Your Drop: ':'Your Pickup: ')+n);
+});
+[mxPickup,mxDropoff].forEach((n,i)=>{
+  if(!COORDS[n]) return;
+  L.circleMarker(COORDS[n],{radius:9,fillColor:i?'#B91C1C':'#059669',color:'#fff',weight:2,fillOpacity:.8}).addTo(rmap)
+   .bindPopup((i?'Match Drop: ':'Match Pickup: ')+n);
+});
+const allPts=[myPickup,myDropoff,mxPickup,mxDropoff].filter(Boolean).map(n=>COORDS[n]).filter(Boolean);
+if(allPts.length) rmap.fitBounds(allPts,{padding:[30,30]});
+{% endif %}
+
+// ══════════════════════════════════════════════════
+// CANVAS HELPER
+// ══════════════════════════════════════════════════
+function canvasPos(canvas, node){
+  const p = NPOS[node];
+  return [p[0]*(canvas.width-60)+30, p[1]*(canvas.height-60)+30];
+}
+
+function drawEdges(ctx, canvas, myP, mxP, highlightSet){
+  EDGES.forEach(([a,b,w])=>{
+    const [x1,y1]=canvasPos(canvas,a), [x2,y2]=canvasPos(canvas,b);
+    const onMy = myP.indexOf(a)>=0 && myP.indexOf(b)>=0 && Math.abs(myP.indexOf(a)-myP.indexOf(b))===1;
+    const onMx = mxP.indexOf(a)>=0 && mxP.indexOf(b)>=0 && Math.abs(mxP.indexOf(a)-mxP.indexOf(b))===1;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+    if(onMy && onMx){ctx.strokeStyle='#34d399';ctx.lineWidth=5;}
+    else if(onMy){ctx.strokeStyle='#2563EB';ctx.lineWidth=4;}
+    else if(onMx){ctx.strokeStyle='#f59e0b';ctx.lineWidth=3.5;}
+    else{ctx.strokeStyle='#1e293b';ctx.lineWidth=1.5;}
+    ctx.stroke();
+    // weight label
+    const mx=(x1+x2)/2, my=(y1+y2)/2;
+    ctx.font='10px DM Sans,sans-serif';ctx.fillStyle='#334155';ctx.textAlign='center';
+    ctx.fillText(w+'km',mx,my-4);
+  });
+}
+
+function drawNodes(ctx, canvas, colorFn, labelFn){
+  Object.keys(NPOS).forEach(node=>{
+    const [x,y]=canvasPos(canvas,node);
+    const {fill,stroke,r} = colorFn(node);
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=fill;ctx.strokeStyle=stroke;ctx.lineWidth=2.5;
+    ctx.fill();ctx.stroke();
+    ctx.font='bold 9.5px DM Sans,sans-serif';ctx.fillStyle='#e2e8f0';ctx.textAlign='center';
+    ctx.fillText(sn(node),x,y+r+13);
+    if(labelFn) labelFn(ctx,x,y,r,node);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// TAB 1: GRAPH OVERVIEW
+// ══════════════════════════════════════════════════
+function drawGraph(){
+  const canvas=document.getElementById('graphCanvas');
+  canvas.width=canvas.offsetWidth;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawEdges(ctx,canvas,myPath,mxPath,null);
+  const overlap=new Set(myPath.filter(n=>mxPath.includes(n)));
+  drawNodes(ctx,canvas,node=>{
+    const isOv=overlap.has(node);
+    const isMy=myPath.includes(node);
+    const isMx=mxPath.includes(node);
+    const isPU=node===myPickup||node===mxPickup;
+    const isDR=node===myDropoff||node===mxDropoff;
+    return {
+      fill: isOv?'#34d399': isMy?'#2563EB': isMx?'#f59e0b':'#1e293b',
+      stroke: isPU?'#4ade80': isDR?'#f87171':'#0f172a',
+      r: isPU||isDR?14:10
+    };
+  }, (ctx,x,y,r,node)=>{
+    if(node===myPickup||node===mxPickup){ctx.font='12px sans-serif';ctx.fillText('📍',x,y+4);}
+    if(node===myDropoff||node===mxDropoff){ctx.font='12px sans-serif';ctx.fillText('🏁',x,y+4);}
+  });
+}
+
+// ══════════════════════════════════════════════════
+// TAB 2: DIJKSTRA ANIMATION
+// ══════════════════════════════════════════════════
+let dijkIdx=0, dijkTimer=null;
+
+document.getElementById('dijkRouteLabel').textContent =
+  sn(myPickup)+' → '+sn(myDropoff);
+
+function drawDijkCanvas(idx){
+  const canvas=document.getElementById('dijkCanvas');
+  canvas.width=canvas.offsetWidth;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(!dijkSteps.length) return;
+  const step=dijkSteps[Math.min(idx,dijkSteps.length-1)];
+  drawEdges(ctx,canvas,myPath,[],null);
+  drawNodes(ctx,canvas,node=>{
+    const visiting=node===step.visiting;
+    const settled=step.visited.includes(node);
+    const isPU=node===myPickup, isDR=node===myDropoff;
+    return {
+      fill: visiting?'#fbbf24': settled?'#16a34a': myPath.includes(node)?'#1d3461':'#1e293b',
+      stroke: isPU?'#4ade80': isDR?'#f87171':'#0f172a',
+      r: visiting?16: isPU||isDR?13:10
+    };
+  }, (ctx,x,y,r,node)=>{
+    if(dijkSteps.length && idx<dijkSteps.length){
+      const d=dijkSteps[idx].distances[node];
+      ctx.font='bold 9px DM Sans,sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';
+      ctx.fillText(d==='∞'?'∞':d+'km',x,y+4);
+    }
+  });
+}
+
+function renderDijkTable(idx){
+  if(!dijkSteps.length){
+    document.getElementById('dijkInfo').innerHTML='<div style="color:#475569">No steps recorded.</div>';
+    return;
+  }
+  const step=dijkSteps[Math.min(idx,dijkSteps.length-1)];
+  let html='';
+  Object.entries(step.distances).forEach(([node,dist])=>{
+    const settling=node===step.visiting;
+    const settled=step.visited.includes(node)&&!settling;
+    const statClass=settling?'visiting':settled?'settled':'pending';
+    const statText=settling?'🔵 Visiting':settled?'✅ Settled':'⏳ Pending';
+    html+=`<div class="drow">
+      <span class="dname">${sn(node)}</span>
+      <span class="ddist">${dist==='∞'?'∞':dist+' km'}</span>
+      <span class="dstat ${statClass}">${statText}</span>
+    </div>`;
+  });
+  document.getElementById('dijkInfo').innerHTML=html;
+  document.getElementById('dijkCounter').textContent=`Step ${Math.min(idx+1,dijkSteps.length)} / ${dijkSteps.length}`;
+  document.getElementById('dijkExplain').textContent=
+    idx<dijkSteps.length ? `Visiting: ${step.visiting} — cost so far: ${step.cost} km` : '✅ Target reached!';
+}
+
+function dijkStep(d){
+  dijkIdx=Math.max(0,Math.min(dijkSteps.length-1,dijkIdx+d));
+  drawDijkCanvas(dijkIdx); renderDijkTable(dijkIdx);
+}
+function dijkReset(){
+  clearInterval(dijkTimer);dijkTimer=null;dijkIdx=0;
+  document.getElementById('btnPlay').textContent='▶ Play';
+  drawDijkCanvas(0);renderDijkTable(0);
+}
+function dijkPlay(){
+  if(dijkTimer){clearInterval(dijkTimer);dijkTimer=null;document.getElementById('btnPlay').textContent='▶ Play';return;}
+  document.getElementById('btnPlay').textContent='⏸ Pause';
+  dijkIdx=0;
+  dijkTimer=setInterval(()=>{
+    if(dijkIdx>=dijkSteps.length-1){clearInterval(dijkTimer);dijkTimer=null;document.getElementById('btnPlay').textContent='▶ Play';return;}
+    dijkIdx++;drawDijkCanvas(dijkIdx);renderDijkTable(dijkIdx);
+  },800);
+}
+// init
+drawDijkCanvas(0);renderDijkTable(0);
+
+// ══════════════════════════════════════════════════
+// TAB 3: BFS ANIMATION
+// ══════════════════════════════════════════════════
+let bfsIdx=0, bfsTimer=null;
+
+// Build giver segment and requester path for BFS canvas
+const giverSeg = T.winner ? (T.winner.shortest_path||[]) : myPath;
+const reqPath  = myPath;
+
+function drawBfsCanvas(idx){
+  const canvas=document.getElementById('bfsCanvas');
+  canvas.width=canvas.offsetWidth;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(!bfsLog.length){
+    ctx.font='14px DM Sans,sans-serif';ctx.fillStyle='#475569';ctx.textAlign='center';
+    ctx.fillText('No BFS data available for this match.',canvas.width/2,canvas.height/2);
+    return;
+  }
+  const step=bfsLog[Math.min(idx,bfsLog.length-1)];
+  const frontier=step.frontier||[];
+  const explored=[];
+  for(let i=0;i<=Math.min(idx,bfsLog.length-1);i++) explored.push(...(bfsLog[i].frontier||[]));
+
+  drawEdges(ctx,canvas,giverSeg,reqPath,null);
+  drawNodes(ctx,canvas,node=>{
+    const isFrontier=frontier.includes(node);
+    const isExplored=explored.includes(node);
+    const inGiver=giverSeg.includes(node);
+    const inReq=reqPath.includes(node);
+    return {
+      fill: isFrontier?'#2563EB': isExplored?'#16a34a': inGiver?'#1d3461': inReq?'#92400e':'#1e293b',
+      stroke: isFrontier?'#60a5fa': isExplored?'#4ade80':'#0f172a',
+      r: isFrontier?15:10
+    };
+  },null);
+}
+
+function renderBfsQueue(idx){
+  const step=bfsLog[Math.min(idx,bfsLog.length-1)];
+  if(!step) return;
+  document.getElementById('bfsCounter').textContent=`Step ${Math.min(idx+1,bfsLog.length)} / ${bfsLog.length}`;
+
+  // Queue display
+  const qEl=document.getElementById('bfsQueue');
+  qEl.innerHTML='';
+  const frontier=step.frontier||[];
+  if(frontier.length===0){
+    qEl.innerHTML='<span style="color:#475569;font-size:.82rem;font-style:italic">Queue empty</span>';
+  } else {
+    frontier.forEach((n,i)=>{
+      const el=document.createElement('div');
+      el.className='bnode '+(i===frontier.length-1?'visiting':'queued');
+      el.textContent=sn(n);
+      qEl.appendChild(el);
+    });
+  }
+
+  // Log
+  const logEl=document.getElementById('bfsLogBox');
+  logEl.innerHTML='';
+  for(let i=0;i<=Math.min(idx,bfsLog.length-1);i++){
+    const s=bfsLog[i];
+    const div=document.createElement('div');
+    div.className='bfs-entry';
+    div.innerHTML=`<span class="bfs-icon">${i===idx?'🔵':'✅'}</span>
+      <span><strong>Step ${i+1}:</strong> ${s.step} — frontier: [${(s.frontier||[]).map(sn).join(' → ')}]</span>`;
+    logEl.appendChild(div);
+  }
+  logEl.scrollTop=logEl.scrollHeight;
+}
+
+function animateOverlap(){
+  const pct=Math.round(winnerOverlap*100);
+  setTimeout(()=>{
+    document.getElementById('overlapFill').style.width=pct+'%';
+    document.getElementById('overlapLabel').textContent=pct+'%';
+  },300);
+}
+
+function bfsStep(d){
+  bfsIdx=Math.max(0,Math.min(bfsLog.length-1,bfsIdx+d));
+  drawBfsCanvas(bfsIdx); renderBfsQueue(bfsIdx);
+}
+function bfsReset(){
+  clearInterval(bfsTimer);bfsTimer=null;bfsIdx=0;
+  document.getElementById('btnBfsPlay').textContent='▶ Play BFS';
+  drawBfsCanvas(0);renderBfsQueue(0);
+}
+function bfsPlay(){
+  if(bfsTimer){clearInterval(bfsTimer);bfsTimer=null;document.getElementById('btnBfsPlay').textContent='▶ Play BFS';return;}
+  document.getElementById('btnBfsPlay').textContent='⏸ Pause';
+  bfsIdx=0;
+  bfsTimer=setInterval(()=>{
+    if(bfsIdx>=bfsLog.length-1){clearInterval(bfsTimer);bfsTimer=null;document.getElementById('btnBfsPlay').textContent='▶ Play BFS';return;}
+    bfsIdx++;drawBfsCanvas(bfsIdx);renderBfsQueue(bfsIdx);
+  },900);
+}
+animateOverlap();
+
+// ══════════════════════════════════════════════════
+// TAB 4: SUMMARY
+// ══════════════════════════════════════════════════
+function renderSummary(){
+  const nr=T.new_ride||{}, w=T.winner||{};
+  const rows=[
+    ['Your Route', sn(myPickup)+' → '+sn(myDropoff)],
+    ['Dijkstra Distance', (nr.distance_km||'—')+' km'],
+    ['Dijkstra Path', (nr.shortest_path||[]).map(sn).join(' → ')],
+    ['Dijkstra Steps', (nr.dijkstra_steps||[]).length],
+    ['Candidates Checked', (T.candidates||[]).length],
+  ];
+  if(T.winner){
+    rows.push(['Winner Route', sn(w.pickup)+' → '+sn(w.dropoff),'hi']);
+    rows.push(['Winner Distance', (w.distance_km||'—')+' km','hi']);
+    rows.push(['BFS Sub-path Found', w.is_subpath?'✅ Yes':'❌ No','hi']);
+    rows.push(['Overlap Score', Math.round((w.overlap||0)*100)+'%','hi']);
+    rows.push(['BFS Steps', (w.bfs_log||[]).length,'hi']);
+  }
+  let html=`<table class="stbl"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>`;
+  rows.forEach(([k,v,cls])=>{ html+=`<tr class="${cls||''}"><td>${k}</td><td>${v}</td></tr>`; });
+  html+=`</tbody></table>`;
+  html+=`<div class="complexity-box">
+    <strong style="color:#60a5fa">Time Complexity Analysis</strong><br>
+    Dijkstra: <span style="color:#34d399">O((V + E) log V)</span>  — V = ${Object.keys(NPOS).length} nodes, E = ${EDGES.length} edges<br>
+    BFS Sub-path: <span style="color:#34d399">O(V + E)</span>  per candidate ride<br>
+    Greedy Best Match: <span style="color:#34d399">O(C log C)</span>  — C = ${(T.candidates||[]).length} candidates evaluated<br>
+    <br><strong style="color:#60a5fa">Space Complexity</strong><br>
+    Dijkstra min-heap: <span style="color:#34d399">O(V)</span>  &nbsp;|&nbsp; BFS queue: <span style="color:#34d399">O(V)</span>
+  </div>`;
+  document.getElementById('summaryContent').innerHTML=html;
+}
+
+// ── Init graph on load ──
+window.addEventListener('load',()=>{
+  drawGraph();
+  setTimeout(()=>{drawGraph();},200);
+});
+window.addEventListener('resize',()=>{
+  drawGraph();
+  if(document.getElementById('panel-dijkstra').classList.contains('on')) drawDijkCanvas(dijkIdx);
+  if(document.getElementById('panel-bfs').classList.contains('on')) drawBfsCanvas(bfsIdx);
+});
+</script>
+</body>
+</html>

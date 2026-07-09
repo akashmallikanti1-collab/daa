@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard – RideShareVCE</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+.notif{display:none;position:fixed;top:72px;right:20px;z-index:999;background:#166534;color:#bbf7d0;padding:14px 20px;border-radius:12px;box-shadow:0 4px 20px #0004;font-weight:600;font-size:.9rem;animation:slidein .3s ease}
+@keyframes slidein{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.btn-view-match{background:#16a34a;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+</style>
+</head>
+<body class="app-page">
+
+<div class="notif" id="matchNotif">🎉 A ride matched! <a id="matchLink" href="#" style="color:#fff;text-decoration:underline;margin-left:8px">View →</a></div>
+
+<nav class="app-nav">
+  <a href="{{ url_for('index') }}" class="nav-brand">
+    <span class="brand-icon">🛵</span>
+    <span class="brand-name">RideShare<span class="brand-vce">VCE</span></span>
+  </a>
+  <div class="nav-user">
+    <div class="user-avatar">{{ user.name[0].upper() }}</div>
+    <span class="user-name">{{ user.name }}</span>
+    <a href="{{ url_for('profile') }}" class="btn btn-ghost btn-sm">👤 Profile</a>
+    <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</nav>
+
+<div class="app-container">
+  <div class="dash-header">
+    <div>
+      <h1>Hey, {{ user.name.split()[0] }} 👋</h1>
+      <p class="dash-sub">Ready for your next ride?</p>
+    </div>
+    <a href="{{ url_for('ride') }}" class="btn btn-primary btn-lg">+ New Ride</a>
+  </div>
+
+  <!-- Map -->
+  <div class="map-section">
+    <div class="map-title"><span>📍 Coverage Map – Around Vasavi College, Ibrahimbagh</span></div>
+    <div id="leaflet-map" style="height:360px;border-radius:16px;overflow:hidden;"></div>
+  </div>
+
+  <!-- Rides -->
+  <div class="rides-section">
+    <h2 class="section-title-sm">Your Rides</h2>
+    {% if rides %}
+    <div class="rides-list">
+      {% for r in rides %}
+      <div class="ride-card status-{{ r.status }}">
+        <div class="ride-card-left">
+          <div class="ride-type-badge {{ r.type }}">
+            {% if r.type=='give'%}🚘 Giving{% else %}🙋 Requesting{% endif %}
+          </div>
+          <div class="ride-route">
+            <span class="pickup-label">📍 {{ r.pickup }}</span>
+            <span class="arrow">→</span>
+            <span class="dropoff-label">🏁 {{ r.dropoff }}</span>
+          </div>
+          <div class="ride-meta">
+            <span>{% if r.vehicle=='bike'%}🛵{% else %}🚗{% endif %} {{ r.vehicle|capitalize }}</span>
+            <span>🕐 {{ r.timestamp }}</span>
+          </div>
+        </div>
+        <div class="ride-card-right">
+          <div class="status-badge status-{{ r.status }}">
+            {% if r.status=='matched' %}✅ Matched
+            {% elif r.status=='searching' %}🔍 Searching
+            {% elif r.status=='cancelled' %}❌ Cancelled
+            {% else %}{{ r.status }}{% endif %}
+          </div>
+          {% if r.status=='matched' %}
+            <a href="{{ url_for('result_page', ride_id=r.id) }}" class="btn-view-match">View Match & Algo →</a>
+          {% endif %}
+          {% if r.status=='searching' %}
+            <a href="{{ url_for('cancel_ride', ride_id=r.id) }}" class="btn btn-danger btn-sm"
+               onclick="return confirm('Cancel this ride?')">Cancel</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <span style="font-size:64px">🚗</span>
+      <h3>No rides yet</h3>
+      <p>Post your first ride to get matched with fellow students!</p>
+      <a href="{{ url_for('ride') }}" class="btn btn-primary">Post a Ride</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const areas = {
+  "Vasavi College (Ibrahimbagh)":[17.3850,78.4011],
+  "Golconda Fort":[17.3833,78.4011],
+  "Mehdipatnam":[17.3927,78.4357],
+  "Tolichowki":[17.4048,78.4196],
+  "Attapur":[17.3631,78.4219],
+  "Langar Houz":[17.3760,78.4260],
+  "Nanalnagar":[17.3885,78.4180],
+  "Karwan":[17.3978,78.4497],
+  "Aramghar":[17.3700,78.4350],
+  "Rajendranagar":[17.3322,78.4126]
+};
+const map=L.map('leaflet-map').setView([17.38,78.42],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+Object.entries(areas).forEach(([name,coords])=>{
+  L.circleMarker(coords,{radius:name.includes('Vasavi')?14:9,
+    fillColor:name.includes('Vasavi')?'#FF5722':'#2563EB',
+    color:'#fff',weight:2,fillOpacity:.9}).addTo(map).bindPopup(`<b>${name}</b>`);
+});
+
+// Poll for any searching rides that may have been matched while user is on dashboard
+const searchingIds = [
+  {% for r in rides %}{% if r.status=='searching' %}"{{ r.id }}",{% endif %}{% endfor %}
+];
+
+async function pollSearching(){
+  for(const id of searchingIds){
+    try{
+      const res=await fetch(`/api/check_match/${id}`);
+      const d=await res.json();
+      if(d.status==='matched'){
+        const notif=document.getElementById('matchNotif');
+        document.getElementById('matchLink').href=`/result/${id}`;
+        notif.style.display='block';
+        setTimeout(()=>notif.style.display='none',8000);
+        searchingIds.splice(searchingIds.indexOf(id),1);
+      }
+    }catch(e){}
+  }
+  if(searchingIds.length>0) setTimeout(pollSearching,4000);
+}
+if(searchingIds.length) pollSearching();
+</script>
+</body>
+</html>

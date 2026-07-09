@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RideShare VCE – Share the Journey</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="landing-page">
+
+<nav class="navbar">
+  <div class="nav-brand">
+    <span class="brand-icon">🛵</span>
+    <span class="brand-name">RideShare<span class="brand-vce">VCE</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="{{ url_for('login') }}" class="btn btn-ghost">Login</a>
+    <a href="{{ url_for('signup') }}" class="btn btn-primary">Sign Up</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">🎓 For Vasavi College Students</div>
+    <h1 class="hero-title">
+      Share Rides,<br>
+      <span class="gradient-text">Save More.</span>
+    </h1>
+    <p class="hero-sub">Match with fellow students going your way. Split fares, reduce traffic, and commute smarter around Ibrahimbagh.</p>
+    <div class="hero-cta">
+      <a href="{{ url_for('signup') }}" class="btn btn-primary btn-lg">Get Started Free</a>
+      <a href="{{ url_for('login') }}" class="btn btn-outline btn-lg">I have an account</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">10</span><span class="stat-label">Areas Covered</span></div>
+      <div class="stat"><span class="stat-num">50%</span><span class="stat-label">Avg. Savings</span></div>
+      <div class="stat"><span class="stat-num">2</span><span class="stat-label">Vehicles</span></div>
+    </div>
+  </div>
+  <div class="hero-map">
+    <div class="map-card">
+      <div class="map-header">
+        <span class="map-dot green"></span>
+        <span>Live Route Match</span>
+      </div>
+      <div class="route-visual">
+        <div class="route-point pickup">
+          <span class="rp-icon">📍</span>
+          <span>Vasavi College</span>
+        </div>
+        <div class="route-line">
+          <div class="route-dot"></div>
+          <div class="route-dot"></div>
+          <div class="route-dot"></div>
+        </div>
+        <div class="route-point dropoff">
+          <span class="rp-icon">🏁</span>
+          <span>Mehdipatnam</span>
+        </div>
+        <div class="match-badge">✓ Match Found!</div>
+      </div>
+      <div class="match-info">
+        <div class="match-user">
+          <div class="avatar">A</div>
+          <div>
+            <div class="match-name">Arjun S.</div>
+            <div class="match-detail">🚗 Car · ₹42 saved</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="container">
+    <h2 class="section-title">How It Works</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🗺️</div>
+        <h3>Select Route</h3>
+        <p>Pick your pickup and drop from 10 real areas around Vasavi College, Ibrahimbagh.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>Smart Matching</h3>
+        <p>Our DAA algorithm finds riders whose route overlaps yours for the perfect match.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤝</div>
+        <h3>Connect & Go</h3>
+        <p>Get each other's contact details instantly and share the ride and the cost.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="areas-section">
+  <div class="container">
+    <h2 class="section-title">Covered Areas</h2>
+    <div class="areas-grid">
+      <div class="area-chip">📍 Vasavi College</div>
+      <div class="area-chip">🏰 Golconda Fort</div>
+      <div class="area-chip">🛣️ Mehdipatnam</div>
+      <div class="area-chip">🏘️ Tolichowki</div>
+      <div class="area-chip">🌆 Attapur</div>
+      <div class="area-chip">🕌 Langar Houz</div>
+      <div class="area-chip">🏫 Nanalnagar</div>
+      <div class="area-chip">🚏 Karwan</div>
+      <div class="area-chip">🌳 Aramghar</div>
+      <div class="area-chip">🏙️ Rajendranagar</div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p>🛵 RideShareVCE · Built for Vasavi College of Engineering, Ibrahimbagh · DAA Project</p>
+  </div>
+</footer>
+
+</body>
+</html>

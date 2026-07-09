@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book a Ride – RideShareVCE</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="app-page">
+
+<nav class="app-nav">
+  <a href="{{ url_for('dashboard') }}" class="nav-brand">
+    <span class="brand-icon">🛵</span>
+    <span class="brand-name">RideShare<span class="brand-vce">VCE</span></span>
+  </a>
+  <div class="nav-user">
+    <div class="user-avatar">{{ user.name[0].upper() }}</div>
+    <span class="user-name">{{ user.name }}</span>
+    <a href="{{ url_for('profile') }}" class="btn btn-ghost btn-sm" style="margin-right:4px">👤 Profile</a><a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</nav>
+
+<div class="app-container ride-layout">
+  <div class="ride-form-col">
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+    <h1 class="page-title">Book a Ride</h1>
+    <p class="page-sub">Tell us where you're going and we'll find your match.</p>
+
+    <form method="POST" class="ride-form" id="rideForm">
+
+      <!-- Ride Type -->
+      <div class="form-section">
+        <label class="form-label">I want to…</label>
+        <div class="toggle-group" id="rideTypeToggle">
+          <button type="button" class="toggle-btn active" data-val="give" onclick="setType('give',this)">
+            🚘 Give a Ride
+          </button>
+          <button type="button" class="toggle-btn" data-val="request" onclick="setType('request',this)">
+            🙋 Request a Ride
+          </button>
+        </div>
+        <input type="hidden" name="ride_type" id="ride_type" value="give">
+      </div>
+
+      <!-- Vehicle -->
+      <div class="form-section">
+        <label class="form-label">Vehicle Type</label>
+        <div class="toggle-group" id="vehicleToggle">
+          <button type="button" class="toggle-btn active" data-val="bike" onclick="setVehicle('bike',this)">
+            🛵 Bike
+          </button>
+          <button type="button" class="toggle-btn" data-val="car" onclick="setVehicle('car',this)">
+            🚗 Car
+          </button>
+        </div>
+        <input type="hidden" name="vehicle" id="vehicle" value="bike">
+      </div>
+
+      <!-- Pickup -->
+      <div class="form-section">
+        <label class="form-label">Pickup Location</label>
+        <select name="pickup" id="pickup" class="form-select" onchange="updateFare(); updateMap();" required>
+          <option value="">-- Select Pickup --</option>
+        </select>
+      </div>
+
+      <!-- Dropoff -->
+      <div class="form-section">
+        <label class="form-label">Drop Location</label>
+        <select name="dropoff" id="dropoff" class="form-select" onchange="updateFare(); updateMap();" required>
+          <option value="">-- Select Drop --</option>
+        </select>
+      </div>
+
+      <!-- Seats -->
+      <div class="form-section" id="seatsSection">
+        <label class="form-label">Available Seats</label>
+        <select name="seats" id="seats" class="form-select">
+          <option value="1">1 Seat</option>
+          <option value="2">2 Seats</option>
+          <option value="3">3 Seats</option>
+          <option value="4">4 Seats</option>
+        </select>
+      </div>
+
+      <!-- Fare Preview -->
+      <div class="fare-preview" id="farePreview" style="display:none">
+        <div class="fare-label">Estimated Fare</div>
+        <div class="fare-amount" id="fareAmount">₹0</div>
+        <div class="fare-note">Split fare with matched rider</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full btn-lg" id="submitBtn">
+        🔍 Find Match
+      </button>
+    </form>
+  </div>
+
+  <!-- Live Map -->
+  <div class="ride-map-col">
+    <div class="map-card-full">
+      <div class="map-title">🗺️ Select Route on Map</div>
+      <div id="rideMap" style="height:480px; border-radius:12px; overflow:hidden;"></div>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const AREAS = {
+  "Vasavi College (Ibrahimbagh)": [17.3850, 78.4011],
+  "Golconda Fort":                 [17.3833, 78.4011],
+  "Mehdipatnam":                   [17.3927, 78.4357],
+  "Tolichowki":                    [17.4048, 78.4196],
+  "Attapur":                       [17.3631, 78.4219],
+  "Langar Houz":                   [17.3760, 78.4260],
+  "Nanalnagar":                    [17.3885, 78.4180],
+  "Karwan":                        [17.3978, 78.4497],
+  "Aramghar":                      [17.3700, 78.4350],
+  "Rajendranagar":                 [17.3322, 78.4126]
+};
+
+const FARES = { bike: {base:15, per_km:8}, car: {base:30, per_km:14} };
+
+// Populate selects
+const areaNames = Object.keys(AREAS);
+['pickup','dropoff'].forEach(id => {
+  const sel = document.getElementById(id);
+  areaNames.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = opt.textContent = a;
+    sel.appendChild(opt);
+  });
+});
+
+// Map
+const map = L.map('rideMap').setView([17.3800, 78.4200], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {attribution:'© OpenStreetMap'}).addTo(map);
+
+const markers = {};
+let routeLine = null;
+
+areaNames.forEach(name => {
+  const isVasavi = name.includes('Vasavi');
+  const m = L.circleMarker(AREAS[name], {
+    radius: isVasavi ? 13 : 8,
+    fillColor: isVasavi ? '#FF5722' : '#2563EB',
+    color: '#fff', weight: 2, fillOpacity: 0.85
+  }).addTo(map).bindPopup(`<b>${name}</b>`);
+  m.on('click', () => {
+    const pu = document.getElementById('pickup').value;
+    if (!pu) { document.getElementById('pickup').value = name; }
+    else if (!document.getElementById('dropoff').value && name !== pu) {
+      document.getElementById('dropoff').value = name;
+    }
+    updateFare(); updateMap();
+  });
+  markers[name] = m;
+});
+
+function updateMap() {
+  const pu = document.getElementById('pickup').value;
+  const dr = document.getElementById('dropoff').value;
+  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  Object.keys(markers).forEach(n => {
+    const isVasavi = n.includes('Vasavi');
+    markers[n].setStyle({
+      fillColor: n===pu ? '#16A34A' : n===dr ? '#DC2626' : isVasavi ? '#FF5722' : '#2563EB',
+      radius: (n===pu||n===dr) ? 12 : isVasavi ? 13 : 8
+    });
+  });
+  if (pu && dr && AREAS[pu] && AREAS[dr]) {
+    routeLine = L.polyline([AREAS[pu], AREAS[dr]], {color:'#2563EB', weight:3, dashArray:'6,6'}).addTo(map);
+    map.fitBounds(routeLine.getBounds(), {padding:[30,30]});
+  }
+}
+
+function haversine(a, b) {
+  const R=6371, dLat=(b[0]-a[0])*Math.PI/180, dLng=(b[1]-a[1])*Math.PI/180;
+  const x = Math.sin(dLat/2)**2 + Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.asin(Math.sqrt(x));
+}
+
+function updateFare() {
+  const pu = document.getElementById('pickup').value;
+  const dr = document.getElementById('dropoff').value;
+  const v = document.getElementById('vehicle').value;
+  if (!pu || !dr || pu === dr) { document.getElementById('farePreview').style.display='none'; return; }
+  const dist = haversine(AREAS[pu]||[0,0], AREAS[dr]||[0,0]);
+  const rate = FARES[v];
+  const fare = rate.base + dist * rate.per_km;
+  document.getElementById('fareAmount').textContent = '₹' + fare.toFixed(0);
+  document.getElementById('farePreview').style.display = 'flex';
+}
+
+function setType(val, btn) {
+  document.getElementById('ride_type').value = val;
+  document.querySelectorAll('#rideTypeToggle .toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('seatsSection').style.display = val==='give' ? '' : 'none';
+}
+function setVehicle(val, btn) {
+  document.getElementById('vehicle').value = val;
+  document.querySelectorAll('#vehicleToggle .toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateFare();
+}
+
+document.getElementById('rideForm').addEventListener('submit', function(e) {
+  const pu = document.getElementById('pickup').value;
+  const dr = document.getElementById('dropoff').value;
+  if (!pu||!dr) { e.preventDefault(); alert('Please select both pickup and drop locations.'); return; }
+  if (pu===dr) { e.preventDefault(); alert('Pickup and drop cannot be the same.'); return; }
+  document.getElementById('submitBtn').textContent = '⏳ Finding match...';
+  document.getElementById('submitBtn').disabled = true;
+});
+</script>
+</body>
+</html>

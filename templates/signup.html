@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up – RideShareVCE</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+
+<div class="auth-container">
+  <div class="auth-left">
+    <a href="{{ url_for('index') }}" class="nav-brand">
+      <span class="brand-icon">🛵</span>
+      <span class="brand-name">RideShare<span class="brand-vce">VCE</span></span>
+    </a>
+    <div class="auth-illustration">
+      <div class="ill-circle">
+        <span style="font-size:80px">🚗</span>
+      </div>
+      <h2>Join the Community</h2>
+      <p>Connect with VCE students and share rides every day.</p>
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-card">
+      <h1 class="auth-title">Create Account</h1>
+      <p class="auth-sub">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+
+      {% if error %}
+      <div class="alert alert-error">⚠️ {{ error }}</div>
+      {% endif %}
+
+      <form method="POST" class="auth-form">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="name" placeholder="Your full name" required>
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" name="email" placeholder="you@example.com" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" name="phone" placeholder="+91 9876543210" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="Create a strong password" required minlength="6">
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Create Account →</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile – RideShareVCE</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px}
+@media(max-width:700px){.profile-grid{grid-template-columns:1fr}}
+.profile-hero{background:linear-gradient(135deg,#1e3a5f 0%,#2563EB 100%);border-radius:20px;padding:36px 32px;display:flex;align-items:center;gap:28px;color:#fff;grid-column:1/-1}
+.big-avatar{width:80px;height:80px;border-radius:50%;background:#fff3;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#fff;border:3px solid #fff6;flex-shrink:0}
+.hero-info h2{margin:0 0 4px;font-size:1.5rem}
+.hero-info p{margin:0;opacity:.8;font-size:.9rem}
+.hero-badge{background:#fff2;border-radius:8px;padding:4px 12px;font-size:.8rem;margin-top:8px;display:inline-block}
+.pcard{background:#fff;border-radius:16px;padding:28px;box-shadow:0 2px 12px #0001}
+.pcard h3{margin:0 0 20px;font-size:1rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.85rem;font-weight:600;color:#374151;margin-bottom:6px}
+.form-group input,.form-group textarea{width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-family:inherit;font-size:.95rem;box-sizing:border-box;transition:border .2s}
+.form-group input:focus,.form-group textarea:focus{outline:none;border-color:#2563EB}
+.form-group textarea{resize:vertical;min-height:72px}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat-box{background:#f8fafc;border-radius:12px;padding:16px;text-align:center}
+.stat-num{font-size:1.8rem;font-weight:800;color:#2563EB}
+.stat-label{font-size:.75rem;color:#64748b;margin-top:4px}
+.stat-box.green .stat-num{color:#16a34a}
+.stat-box.red .stat-num{color:#dc2626}
+.alert{padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:.9rem}
+.alert-error{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.alert-success{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.divider{height:1px;background:#f1f5f9;margin:20px 0}
+</style>
+</head>
+<body class="app-page">
+<nav class="app-nav">
+  <a href="{{ url_for('dashboard') }}" class="nav-brand">
+    <span class="brand-icon">🛵</span>
+    <span class="brand-name">RideShare<span class="brand-vce">VCE</span></span>
+  </a>
+  <div class="nav-user">
+    <div class="user-avatar">{{ user.name[0].upper() }}</div>
+    <span class="user-name">{{ user.name }}</span>
+    <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</nav>
+
+<div class="app-container">
+  {% if error %}<div class="alert alert-error">❌ {{ error }}</div>{% endif %}
+  {% if success %}<div class="alert alert-success">✅ {{ success }}</div>{% endif %}
+
+  <div class="profile-grid">
+    <!-- Hero -->
+    <div class="profile-hero">
+      <div class="big-avatar">{{ user.name[0].upper() }}</div>
+      <div class="hero-info">
+        <h2>{{ user.name }}</h2>
+        <p>{{ user.email }}</p>
+        <p>📱 {{ user.phone }}</p>
+        {% if user_rec.get('bio') %}<p style="margin-top:8px;opacity:.9;font-style:italic">"{{ user_rec.bio }}"</p>{% endif %}
+        <div class="hero-badge">🎓 Vasavi College · Joined {{ user_rec.get('joined','—') }}</div>
+      </div>
+    </div>
+
+    <!-- Ride Stats -->
+    <div class="pcard">
+      <h3>📊 Your Ride Stats</h3>
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-num">{{ stats.total }}</div>
+          <div class="stat-label">Total Rides</div>
+        </div>
+        <div class="stat-box green">
+          <div class="stat-num">{{ stats.matched }}</div>
+          <div class="stat-label">Matched</div>
+        </div>
+        <div class="stat-box red">
+          <div class="stat-num">{{ stats.cancelled }}</div>
+          <div class="stat-label">Cancelled</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">{{ stats.given }}</div>
+          <div class="stat-label">Rides Given</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">{{ stats.requested }}</div>
+          <div class="stat-label">Rides Taken</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">{{ stats.searching }}</div>
+          <div class="stat-label">Pending</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Profile -->
+    <div class="pcard">
+      <h3>✏️ Edit Profile</h3>
+      <form method="POST">
+        <input type="hidden" name="action" value="update_info">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="name" value="{{ user.name }}" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" name="phone" value="{{ user.phone }}" required>
+        </div>
+        <div class="form-group">
+          <label>Bio (optional)</label>
+          <textarea name="bio" placeholder="Tell others about yourself...">{{ user_rec.get('bio','') }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Save Changes</button>
+      </form>
+    </div>
+
+    <!-- Change Password -->
+    <div class="pcard">
+      <h3>🔒 Change Password</h3>
+      <form method="POST">
+        <input type="hidden" name="action" value="change_password">
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" name="old_password" required>
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" name="new_password" required>
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" name="confirm_password" required>
+        </div>
+        <button type="submit" class="btn btn-outline" style="width:100%">Update Password</button>
+      </form>
+      <div class="divider"></div>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-ghost" style="width:100%;text-align:center">← Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
