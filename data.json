@@ -1,0 +1,493 @@
+{
+  "users": {
+    "akashmallikanti1@gmail.com": {
+      "name": "AKASH MALLIKANTI",
+      "email": "akashmallikanti1@gmail.com",
+      "phone": "+919121036494",
+      "password": "123456",
+      "id": "032ec4de",
+      "bio": "",
+      "joined": "2026-05-05"
+    }
+  },
+  "rides": [
+    {
+      "id": "5a6dca0c",
+      "user_id": "950d89bb",
+      "user_name": "Joys mary Priya",
+      "user_phone": "+916303392130",
+      "user_email": "joysmarypriya8@gmail.com",
+      "type": "give",
+      "pickup": "Vasavi College (Ibrahimbagh)",
+      "dropoff": "Langar Houz",
+      "vehicle": "bike",
+      "seats": 1,
+      "status": "matched",
+      "matched_with": "923ecb97",
+      "timestamp": "2026-05-05 13:23"
+    },
+    {
+      "id": "923ecb97",
+      "user_id": "032ec4de",
+      "user_name": "AKASH MALLIKANTI",
+      "user_phone": "+919121036494",
+      "user_email": "akashmallikanti1@gmail.com",
+      "type": "request",
+      "pickup": "Vasavi College (Ibrahimbagh)",
+      "dropoff": "Langar Houz",
+      "vehicle": "bike",
+      "seats": 1,
+      "status": "matched",
+      "matched_with": "5a6dca0c",
+      "timestamp": "2026-05-05 13:23"
+    }
+  ],
+  "algo_traces": {
+    "923ecb97": {
+      "new_ride": {
+        "pickup": "Vasavi College (Ibrahimbagh)",
+        "dropoff": "Langar Houz",
+        "dijkstra_steps": [
+          {
+            "visiting": "Vasavi College (Ibrahimbagh)",
+            "cost": 0,
+            "visited": [
+              "Vasavi College (Ibrahimbagh)"
+            ],
+            "distances": {
+              "Vasavi College (Ibrahimbagh)": 0,
+              "Golconda Fort": "\u221e",
+              "Nanalnagar": "\u221e",
+              "Langar Houz": "\u221e",
+              "Aramghar": "\u221e",
+              "Attapur": "\u221e",
+              "Tolichowki": "\u221e",
+              "Mehdipatnam": "\u221e",
+              "Karwan": "\u221e",
+              "Rajendranagar": "\u221e"
+            }
+          },
+          {
+            "visiting": "Golconda Fort",
+            "cost": 0.6,
+            "visited": [
+              "Golconda Fort",
+              "Vasavi College (Ibrahimbagh)"
+            ],
+            "distances": {
+              "Vasavi College (Ibrahimbagh)": 0,
+              "Golconda Fort": 0.6,
+              "Nanalnagar": 1.8,
+              "Langar Houz": "\u221e",
+              "Aramghar": "\u221e",
+              "Attapur": 3.2,
+              "Tolichowki": 2.5,
+              "Mehdipatnam": "\u221e",
+              "Karwan": "\u221e",
+              "Rajendranagar": "\u221e"
+            }
+          },
+          {
+            "visiting": "Nanalnagar",
+            "cost": 1.8,
+            "visited": [
+              "Golconda Fort",
+              "Nanalnagar",
+              "Vasavi College (Ibrahimbagh)"
+            ],
+            "distances": {
+              "Vasavi College (Ibrahimbagh)": 0,
+              "Golconda Fort": 0.6,
+              "Nanalnagar": 1.8,
+              "Langar Houz": 3.6,
+              "Aramghar": "\u221e",
+              "Attapur": 3.2,
+              "Tolichowki": 2.5,
+              "Mehdipatnam": "\u221e",
+              "Karwan": "\u221e",
+              "Rajendranagar": "\u221e"
+            }
+          },
+          {
+            "visiting": "Tolichowki",
+            "cost": 2.5,
+            "visited": [
+              "Tolichowki",
+              "Golconda Fort",
+              "Nanalnagar",
+              "Vasavi College (Ibrahimbagh)"
+            ],
+            "distances": {
+              "Vasavi College (Ibrahimbagh)": 0,
+              "Golconda Fort": 0.6,
+              "Nanalnagar": 1.8,
+              "Langar Houz": 3.0,
+              "Aramghar": "\u221e",
+              "Attapur": 3.2,
+              "Tolichowki": 2.5,
+              "Mehdipatnam": 3.7,
+              "Karwan": "\u221e",
+              "Rajendranagar": "\u221e"
+            }
+          },
+          {
+            "visiting": "Langar Houz",
+            "cost": 3.0,
+            "visited": [
+              "Langar Houz",
+              "Golconda Fort",
+              "Nanalnagar",
+              "Vasavi College (Ibrahimbagh)",
+              "Tolichowki"
+            ],
+            "distances": {
+              "Vasavi College (Ibrahimbagh)": 0,
+              "Golconda Fort": 0.6,
+              "Nanalnagar": 1.8,
+              "Langar Houz": 3.0,
+              "Aramghar": "\u221e",
+              "Attapur": 3.2,
+              "Tolichowki": 2.5,
+              "Mehdipatnam": 3.7,
+              "Karwan": 4.8,
+              "Rajendranagar": "\u221e"
+            }
+          }
+        ],
+        "shortest_path": [
+          "Vasavi College (Ibrahimbagh)",
+          "Nanalnagar",
+          "Langar Houz"
+        ],
+        "distance_km": 3.0
+      },
+      "candidates": [
+        {
+          "ride_id": "5a6dca0c",
+          "pickup": "Vasavi College (Ibrahimbagh)",
+          "dropoff": "Langar Houz",
+          "shortest_path": [
+            "Vasavi College (Ibrahimbagh)",
+            "Nanalnagar",
+            "Langar Houz"
+          ],
+          "distance_km": 3.0,
+          "bfs_log": [
+            {
+              "step": "Exploring: Vasavi College (Ibrahimbagh)",
+              "frontier": [
+                "Vasavi College (Ibrahimbagh)"
+              ],
+              "giver_segment": [
+                "Vasavi College (Ibrahimbagh)",
+                "Nanalnagar",
+                "Langar Houz"
+              ]
+            },
+            {
+              "step": "Exploring: Nanalnagar",
+              "frontier": [
+                "Vasavi College (Ibrahimbagh)",
+                "Nanalnagar"
+              ],
+              "giver_segment": [
+                "Vasavi College (Ibrahimbagh)",
+                "Nanalnagar",
+                "Langar Houz"
+              ]
+            },
+            {
+              "step": "Exploring: Langar Houz",
+              "frontier": [
+                "Vasavi College (Ibrahimbagh)",
+                "Nanalnagar",
+                "Langar Houz"
+              ],
+              "giver_segment": [
+                "Vasavi College (Ibrahimbagh)",
+                "Nanalnagar",
+                "Langar Houz"
+              ]
+            }
+          ],
+          "is_subpath": true,
+          "overlap": 1.0
+        }
+      ],
+      "winner": {
+        "ride_id": "5a6dca0c",
+        "pickup": "Vasavi College (Ibrahimbagh)",
+        "dropoff": "Langar Houz",
+        "shortest_path": [
+          "Vasavi College (Ibrahimbagh)",
+          "Nanalnagar",
+          "Langar Houz"
+        ],
+        "distance_km": 3.0,
+        "bfs_log": [
+          {
+            "step": "Exploring: Vasavi College (Ibrahimbagh)",
+            "frontier": [
+              "Vasavi College (Ibrahimbagh)"
+            ],
+            "giver_segment": [
+              "Vasavi College (Ibrahimbagh)",
+              "Nanalnagar",
+              "Langar Houz"
+            ]
+          },
+          {
+            "step": "Exploring: Nanalnagar",
+            "frontier": [
+              "Vasavi College (Ibrahimbagh)",
+              "Nanalnagar"
+            ],
+            "giver_segment": [
+              "Vasavi College (Ibrahimbagh)",
+              "Nanalnagar",
+              "Langar Houz"
+            ]
+          },
+          {
+            "step": "Exploring: Langar Houz",
+            "frontier": [
+              "Vasavi College (Ibrahimbagh)",
+              "Nanalnagar",
+              "Langar Houz"
+            ],
+            "giver_segment": [
+              "Vasavi College (Ibrahimbagh)",
+              "Nanalnagar",
+              "Langar Houz"
+            ]
+          }
+        ],
+        "is_subpath": true,
+        "overlap": 1.0
+      }
+    },
+    "5a6dca0c": {
+      "new_ride": {
+        "pickup": "Vasavi College (Ibrahimbagh)",
+        "dropoff": "Langar Houz",
+        "dijkstra_steps": [
+          {
+            "visiting": "Vasavi College (Ibrahimbagh)",
+            "cost": 0,
+            "visited": [
+              "Vasavi College (Ibrahimbagh)"
+            ],
+            "distances": {
+              "Vasavi College (Ibrahimbagh)": 0,
+              "Golconda Fort": "\u221e",
+              "Nanalnagar": "\u221e",
+              "Langar Houz": "\u221e",
+              "Aramghar": "\u221e",
+              "Attapur": "\u221e",
+              "Tolichowki": "\u221e",
+              "Mehdipatnam": "\u221e",
+              "Karwan": "\u221e",
+              "Rajendranagar": "\u221e"
+            }
+          },
+          {
+            "visiting": "Golconda Fort",
+            "cost": 0.6,
+            "visited": [
+              "Golconda Fort",
+              "Vasavi College (Ibrahimbagh)"
+            ],
+            "distances": {
+              "Vasavi College (Ibrahimbagh)": 0,
+              "Golconda Fort": 0.6,
+              "Nanalnagar": 1.8,
+              "Langar Houz": "\u221e",
+              "Aramghar": "\u221e",
+              "Attapur": 3.2,
+              "Tolichowki": 2.5,
+              "Mehdipatnam": "\u221e",
+              "Karwan": "\u221e",
+              "Rajendranagar": "\u221e"
+            }
+          },
+          {
+            "visiting": "Nanalnagar",
+            "cost": 1.8,
+            "visited": [
+              "Golconda Fort",
+              "Nanalnagar",
+              "Vasavi College (Ibrahimbagh)"
+            ],
+            "distances": {
+              "Vasavi College (Ibrahimbagh)": 0,
+              "Golconda Fort": 0.6,
+              "Nanalnagar": 1.8,
+              "Langar Houz": 3.6,
+              "Aramghar": "\u221e",
+              "Attapur": 3.2,
+              "Tolichowki": 2.5,
+              "Mehdipatnam": "\u221e",
+              "Karwan": "\u221e",
+              "Rajendranagar": "\u221e"
+            }
+          },
+          {
+            "visiting": "Tolichowki",
+            "cost": 2.5,
+            "visited": [
+              "Tolichowki",
+              "Golconda Fort",
+              "Nanalnagar",
+              "Vasavi College (Ibrahimbagh)"
+            ],
+            "distances": {
+              "Vasavi College (Ibrahimbagh)": 0,
+              "Golconda Fort": 0.6,
+              "Nanalnagar": 1.8,
+              "Langar Houz": 3.0,
+              "Aramghar": "\u221e",
+              "Attapur": 3.2,
+              "Tolichowki": 2.5,
+              "Mehdipatnam": 3.7,
+              "Karwan": "\u221e",
+              "Rajendranagar": "\u221e"
+            }
+          },
+          {
+            "visiting": "Langar Houz",
+            "cost": 3.0,
+            "visited": [
+              "Langar Houz",
+              "Golconda Fort",
+              "Nanalnagar",
+              "Vasavi College (Ibrahimbagh)",
+              "Tolichowki"
+            ],
+            "distances": {
+              "Vasavi College (Ibrahimbagh)": 0,
+              "Golconda Fort": 0.6,
+              "Nanalnagar": 1.8,
+              "Langar Houz": 3.0,
+              "Aramghar": "\u221e",
+              "Attapur": 3.2,
+              "Tolichowki": 2.5,
+              "Mehdipatnam": 3.7,
+              "Karwan": 4.8,
+              "Rajendranagar": "\u221e"
+            }
+          }
+        ],
+        "shortest_path": [
+          "Vasavi College (Ibrahimbagh)",
+          "Nanalnagar",
+          "Langar Houz"
+        ],
+        "distance_km": 3.0
+      },
+      "candidates": [
+        {
+          "ride_id": "5a6dca0c",
+          "pickup": "Vasavi College (Ibrahimbagh)",
+          "dropoff": "Langar Houz",
+          "shortest_path": [
+            "Vasavi College (Ibrahimbagh)",
+            "Nanalnagar",
+            "Langar Houz"
+          ],
+          "distance_km": 3.0,
+          "bfs_log": [
+            {
+              "step": "Exploring: Vasavi College (Ibrahimbagh)",
+              "frontier": [
+                "Vasavi College (Ibrahimbagh)"
+              ],
+              "giver_segment": [
+                "Vasavi College (Ibrahimbagh)",
+                "Nanalnagar",
+                "Langar Houz"
+              ]
+            },
+            {
+              "step": "Exploring: Nanalnagar",
+              "frontier": [
+                "Vasavi College (Ibrahimbagh)",
+                "Nanalnagar"
+              ],
+              "giver_segment": [
+                "Vasavi College (Ibrahimbagh)",
+                "Nanalnagar",
+                "Langar Houz"
+              ]
+            },
+            {
+              "step": "Exploring: Langar Houz",
+              "frontier": [
+                "Vasavi College (Ibrahimbagh)",
+                "Nanalnagar",
+                "Langar Houz"
+              ],
+              "giver_segment": [
+                "Vasavi College (Ibrahimbagh)",
+                "Nanalnagar",
+                "Langar Houz"
+              ]
+            }
+          ],
+          "is_subpath": true,
+          "overlap": 1.0
+        }
+      ],
+      "winner": {
+        "ride_id": "5a6dca0c",
+        "pickup": "Vasavi College (Ibrahimbagh)",
+        "dropoff": "Langar Houz",
+        "shortest_path": [
+          "Vasavi College (Ibrahimbagh)",
+          "Nanalnagar",
+          "Langar Houz"
+        ],
+        "distance_km": 3.0,
+        "bfs_log": [
+          {
+            "step": "Exploring: Vasavi College (Ibrahimbagh)",
+            "frontier": [
+              "Vasavi College (Ibrahimbagh)"
+            ],
+            "giver_segment": [
+              "Vasavi College (Ibrahimbagh)",
+              "Nanalnagar",
+              "Langar Houz"
+            ]
+          },
+          {
+            "step": "Exploring: Nanalnagar",
+            "frontier": [
+              "Vasavi College (Ibrahimbagh)",
+              "Nanalnagar"
+            ],
+            "giver_segment": [
+              "Vasavi College (Ibrahimbagh)",
+              "Nanalnagar",
+              "Langar Houz"
+            ]
+          },
+          {
+            "step": "Exploring: Langar Houz",
+            "frontier": [
+              "Vasavi College (Ibrahimbagh)",
+              "Nanalnagar",
+              "Langar Houz"
+            ],
+            "giver_segment": [
+              "Vasavi College (Ibrahimbagh)",
+              "Nanalnagar",
+              "Langar Houz"
+            ]
+          }
+        ],
+        "is_subpath": true,
+        "overlap": 1.0
+      }
+    }
+  }
+}
